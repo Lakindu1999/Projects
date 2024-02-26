@@ -1,1 +1,419 @@
+import pandas as pd  # used for faster data analysis, data cleaning, and data pre-processing.
+import matplotlib.pyplot as plt
+import seaborn as sns
+import numpy as np
+
+df = pd.read_csv('exam_data.csv')
+df.head()
+df.info()
+df.describe()
+df.isnull()
+print(df.isnull().sum())
+df = df.drop(columns = ['Unnamed: 0'], axis=1)
+df.dtypes
+
+df = df.replace({'famsup': {'yes': True,
+                            'no': False}})
+df = df.replace({'activities': {'yes': True,
+                            'no': False}})
+df = df.replace({'nursery': {'yes': True,
+                            'no': False}})
+df = df.replace({'higher': {'yes': True,
+                            'no': False}})
+df = df.replace({'internet': {'yes': True,
+                            'no': False}})
+df = df.replace({'romantic': {'yes': True,
+                            'no': False}})
+df = df.replace({'paid.Math': {'yes': True,
+                            'no': False}})
+df = df.replace({'paid.Port': {'yes': True,
+                            'no': False}})
+
+df = df.drop(columns = ['famsize', 'Pstatus', 'Mjob', 'G1.Math', 'G2.Math', 'G3.Math', 'G1.Port', 'G3.Port'], axis=1)
+
+corr_df = df.iloc[:,:].corr()
+corr_df
+
+plt.figure(figsize=(20,10))
+sns.heatmap(data=corr_df, annot=True, cmap='YlGnBu')
+plt.title("Correlation Heatmap")
+plt.show()
+
+num = df.select_dtypes(include = [np.number])
+fig = plt.figure(figsize=(40,50))
+j=0
+for i in num.columns:
+    plt.subplot(11, 5, j+1)
+    j = j+1
+    sns.boxplot(y=num[i], width=0.3, palette='Set2')
+fig.suptitle('Scatterplot Analysis')
+fig.tight_layout()
+fig.subplots_adjust(top=0.95)
+plt.show()
+
+df['G2.Port'].value_counts().sort_index(ascending=True)
+sns.countplot(x='G2.Port',data=df, palette='Set2')
+
+figure, (ax9) = plt.subplots(ncols=1, figsize=(8,5))
+
+ax9.set_title('Total Higher Education')
+ax=sns.countplot(x="higher", data=df, ax=ax9, palette='Set2')
+
+sns.barplot(y='G2.Port', x='higher', data=df, estimator=np.mean, palette='Set2')
+sns.barplot(y='G2.Port', x='school', data=df, estimator=np.mean, palette='Set2')
+
+sns.barplot(y='G2.Port', x='sex', data=df, estimator=np.mean, palette='Set2')
+plt.xlabel('Gender')
+plt.ylabel('G2.Port_Score')
+plt.show()
+
+sns.countplot(x='school',data=df, palette='Set2')
+plt.ylabel('Number_of_Students')
+plt.show()
+
+figure, (ax9,ax10) = plt.subplots(ncols=2, figsize=(20,5))
+
+ax9.set_title('Failure Port within 2 schools')
+ax=df.groupby('failures.Port')['school'].value_counts().unstack().plot.bar(ax=ax9)
+
+ax10.set_title('Failure Math within 2 schools')
+df.groupby('failures.Math')['school'].value_counts().unstack().plot.bar(ax=ax10)
+
+figure, (ax9,ax10) = plt.subplots(ncols=2, figsize=(20,5))
+
+ax9.set_title('Failure Port within Gender')
+ax=df.groupby('failures.Port')['sex'].value_counts().unstack().plot.bar(ax=ax9)
+
+ax10.set_title('Failure Math within Gender')
+df.groupby('failures.Math')['sex'].value_counts().unstack().plot.bar(ax=ax10)
+
+figure, (ax9,ax10) = plt.subplots(ncols=2, figsize=(20,5), facecolor='lightblue')
+
+ax9.set_title('Failure Port among G2.Port')
+ax=df.groupby('G2.Port')['failures.Port'].value_counts().unstack().plot.bar(ax=ax9)
+
+ax10.set_title('Failure Math among G2.Port')
+df.groupby('G2.Port')['failures.Port'].value_counts().unstack().plot.bar(ax=ax10)
+
+figure, (ax9,ax10) = plt.subplots(ncols=2, figsize=(20,5), facecolor='lightblue')
+
+df.Dalc.value_counts()
+df.Walc.value_counts()
+
+figure, (ax9,ax10) = plt.subplots(ncols=2, figsize=(20,5), facecolor='lightblue')
+
+ax9.set_title('Daily Alcohol')
+ax=sns.countplot(x="Dalc", data=df, ax=ax9, palette='Set2')
+
+ax10.set_title('Weekly Alcohol')
+ax=sns.countplot(x="Walc", data=df, ax=ax10, palette='Set2')
+
+figure, (ax9,ax10) = plt.subplots(ncols=2, figsize=(10,4))
+
+ax9.set_title('Daily Alcohol')
+ax=sns.catplot(y='G2.Port', x="Dalc", data=df, ax=ax9, palette='Set2')
+
+ax10.set_title('Weekly Alcohol')
+ax=sns.catplot(y='G2.Port', x="Walc", data=df, ax=ax10, palette='Set2')
+
+study_time = df.groupby(['studytime'],as_index = False).agg({'G2.Port':'mean'})
+study_time['G2.Port'].plot()
+plt.xlabel('Study Time')
+plt.ylabel('Mean G2.Port Score')
+plt.show()
+
+f_edu = df.groupby(['Fedu'],as_index = False).agg({'G2.Port':'mean'})
+f_edu['G2.Port'].plot()
+plt.xlabel('Fedu')
+plt.ylabel('Mean G2.Port Score')
+plt.show()
+
+m_edu = df.groupby(['Medu'],as_index = False).agg({'G2.Port':'mean'})
+m_edu['G2.Port'].plot()
+plt.xlabel('Medu')
+plt.ylabel('Mean G2.Port Score')
+plt.show()
+
+df_model = df.drop(columns=['address', 'reason', 'guardian'], axis=1)
+from sklearn.preprocessing import OneHotEncoder
+
+ohencoder = OneHotEncoder(sparse = False)
+ohe_feature = ohencoder.fit_transform(df_model[['Fjob']])
+
+encoded = pd.DataFrame(ohe_feature, columns=ohencoder.get_feature_names_out(['Fjob']))
+
+df_model = pd.concat([df_model, encoded], axis=1).drop('Fjob', axis=1)
+
+#For School
+ohencoder = OneHotEncoder(sparse = False)
+ohe_feature = ohencoder.fit_transform(df_model[['school']])
+encoded = pd.DataFrame(ohe_feature, columns=ohencoder.get_feature_names_out(['school']))
+df_model = pd.concat([df_model, encoded], axis=1).drop('school', axis=1)
+
+#For Sex
+ohencoder = OneHotEncoder(sparse = False)
+ohe_feature = ohencoder.fit_transform(df_model[['sex']])
+encoded = pd.DataFrame(ohe_feature, columns=ohencoder.get_feature_names_out(['sex']))
+df_model = pd.concat([df_model, encoded], axis=1).drop('sex', axis=1)
+df_model.info()
+
+y = df_model['G2.Port'].values
+x = df_model.drop('G2.Port', axis=1).values
+
+from sklearn.model_selection import train_test_split
+x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.25, random_state = 0)
+
+quality_regression_df = pd.DataFrame(columns = ['R2 squre', 'MAE', 'MSE'],
+                                    index = ['Multiple Linear Regression', 'Decision Tree regression',
+                                            'Random Forest Regression', 'Suport Vector Regression'])
+
+import sklearn.metrics as metrics
+from sklearn.linear_model import LinearRegression
+lin_reg = LinearRegression()
+lin_reg.fit(x_train,y_train)
+y_pred = lin_reg.predict(x_test)
+
+mae = metrics.mean_absolute_error(y_test, y_pred)
+mse = metrics.mean_squared_error(y_test, y_pred)
+r2 = metrics.r2_score(y_test, y_pred)
+
+print('R2 Square: ',r2)
+print('MAE: ',mae)
+print('MSE: ',mse)
+
+#adding the result of the model to our new dataframe for comparison
+
+quality_regression_df.loc['Multiple Linear Regression'] = [r2, mae, mse]
+from sklearn.tree import DecisionTreeRegressor
+
+dt_regressor = DecisionTreeRegressor(random_state=0)
+dt_regressor.fit(x_train, y_train)
+
+y_pred = dt_regressor.predict(x_test)
+
+mae = metrics.mean_absolute_error(y_test, y_pred)
+mse = metrics.mean_squared_error(y_test, y_pred)
+r2 = metrics.r2_score(y_test, y_pred)
+#score = dt_regressor.score(x_test)
+
+print('R2 Square: ',r2)
+print('MAE: ',mae)
+print('MSE: ',mse)
+#adding the result of the model to our new dataframe for comparison
+
+quality_regression_df.loc['Decision Tree regression'] = [r2, mae, mse]
+
+from sklearn.ensemble import RandomForestRegressor
+
+rf_regressor = RandomForestRegressor(n_estimators= 300, random_state=0)
+rf_regressor.fit(x_train,y_train)
+y_pred = rf_regressor.predict(x_test)
+
+mae = metrics.mean_absolute_error(y_test, y_pred)
+mse = metrics.mean_squared_error(y_test, y_pred)
+r2 = metrics.r2_score(y_test, y_pred)
+
+print('R2 Square: ',r2)
+print('MAE: ',mae)
+print('MSE: ',mse)
+
+#adding the result of the model to our new dataframe for comparison
+
+quality_regression_df.loc['Random Forest Regression'] = [r2, mae, mse]
+
+from sklearn.svm import SVR
+
+regressor= SVR(kernel='rbf')
+regressor.fit(x_train,y_train)
+
+y_pred=regressor.predict(x_test)
+
+mae=metrics.mean_absolute_error(y_test, y_pred)
+mse=metrics.mean_squared_error(y_test, y_pred)
+r2 = metrics.r2_score(y_test, y_pred)
+
+
+print('R2_square: ', r2)
+print('MAE: ', mae)
+print('MSE: ', mse)
+
+#adding the result of the model to our new dataframe for comparison
+
+quality_regression_df.loc['Suport Vector Regression'] = [r2, mae, mse]
+# Comaprision of different regression model
+
+quality_regression_df
+
+
+from sklearn.metrics import recall_score, confusion_matrix, precision_score, f1_score, accuracy_score, classification_report
+from sklearn.linear_model import LogisticRegression
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.ensemble import AdaBoostClassifier
+from xgboost import XGBClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import GridSearchCV
+
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.preprocessing import KBinsDiscretizer
+
+
+discretizer = KBinsDiscretizer(n_bins=4, encode='ordinal', strategy='quantile')
+df_model['G2.Port'] = discretizer.fit_transform(df_model[['G2.Port']])
+
+
+y = df_model['G2.Port'].values
+x = df_model.drop('G2.Port', axis=1).values
+
+
+# Splitting the data into training and testing data
+x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.25, random_state=42)
+
+df_model['G2.Port'].value_counts()
+
+quality_classification_df = pd.DataFrame(columns = ['Accuracy Score'],
+                                    index = ['Decision Tree Classifier', 'Logistic regression',
+                                            'KNN', 'AdaBoost Classifier', 'Gradient Boost Classifier', 'Random Forest Classifier'])
+
+clf = DecisionTreeClassifier(random_state=42)
+clf.fit(x_train, y_train)
+
+# Predicting the test set results
+y_pred = clf.predict(x_test)
+
+print(classification_report(y_test, y_pred))
+
+#adding the result of the model to our new dataframe for comparison
+
+quality_classification_df.loc['Decision Tree Classifier'] = [clf.score(x_test, y_test)]
+
+confusionMax = confusion_matrix(y_test, y_pred)
+
+plt.figure(figsize=(8, 6))
+sns.heatmap(confusionMax, annot=True, fmt="d", cmap="YlGnBu", cbar=False, square=True)
+plt.xlabel('Predicted Labels')
+plt.ylabel('True Labels')
+plt.title('Confusion Matrix')
+plt.show()
+print(confusionMax)
+
+lr_model = LogisticRegression()
+lr_model.fit(x_train,y_train)
+y_pred= lr_model.predict(x_test)
+
+df_model['G2.Port'].value_counts()
+print(classification_report(y_test, y_pred))
+
+#adding the result of the model to our new dataframe for comparison
+
+quality_classification_df.loc['Logistic regression'] = [lr_model.score(x_test, y_test)]
+
+confusionMax = confusion_matrix(y_test, y_pred)
+
+plt.figure(figsize=(8, 6))
+sns.heatmap(confusionMax, annot=True, fmt="d", cmap="YlGnBu", cbar=False, square=True)
+plt.xlabel('Predicted Labels')
+plt.ylabel('True Labels')
+plt.title('Confusion Matrix')
+plt.show()
+
+knn_model = KNeighborsClassifier(n_neighbors = 5)
+knn_model.fit(x_train,y_train)
+y_pred= knn_model.predict(x_test)
+print(classification_report(y_test, y_pred))
+
+#adding the result of the model to our new dataframe for comparison
+
+quality_classification_df.loc['KNN'] = [knn_model.score(x_test, y_test)]
+
+confusionMax = confusion_matrix(y_test, y_pred)
+
+plt.figure(figsize=(8, 6))
+sns.heatmap(confusionMax, annot=True, fmt="d", cmap="YlGnBu", cbar=False, square=True)
+plt.xlabel('Predicted Labels')
+plt.ylabel('True Labels')
+plt.title('Confusion Matrix')
+plt.show()
+
+a_model = AdaBoostClassifier()
+a_model.fit(x_train, y_train)
+y_pred = a_model.predict(x_test)
+print(classification_report(y_test, y_pred))
+
+#adding the result of the model to our new dataframe for comparison
+
+quality_classification_df.loc['AdaBoost Classifier'] = [a_model.score(x_test, y_test)]
+
+confusionMax = confusion_matrix(y_test, y_pred)
+
+plt.figure(figsize=(8, 6))
+sns.heatmap(confusionMax, annot=True, fmt="d", cmap="YlGnBu", cbar=False, square=True)
+plt.xlabel('Predicted Labels')
+plt.ylabel('True Labels')
+plt.title('Confusion Matrix')
+plt.show()
+
+gb = GradientBoostingClassifier()
+gb.fit(x_train, y_train)
+y_pred = gb.predict(x_test)
+print(classification_report(y_test, y_pred))
+
+#adding the result of the model to our new dataframe for comparison
+
+quality_classification_df.loc['Gradient Boost Classifier'] = [gb.score(x_test, y_test)]
+
+confusionMax = confusion_matrix(y_test, y_pred)
+
+plt.figure(figsize=(8, 6))
+sns.heatmap(confusionMax, annot=True, fmt="d", cmap="YlGnBu", cbar=False, square=True)
+plt.xlabel('Predicted Labels')
+plt.ylabel('True Labels')
+plt.title('Confusion Matrix')
+plt.show()
+
+rf_model = RandomForestClassifier()
+rf_model.fit(x_train, y_train)
+y_pred = rf_model.predict(x_test)
+print(classification_report(y_test, y_pred))
+
+#adding the result of the model to our new dataframe for comparison
+
+quality_classification_df.loc['Random Forest Classifier'] = [rf_model.score(x_test, y_test)]
+
+confusionMax = confusion_matrix(y_test, y_pred)
+
+plt.figure(figsize=(8, 6))
+sns.heatmap(confusionMax, annot=True, fmt="d", cmap="YlGnBu", cbar=False, square=True)
+plt.xlabel('Predicted Labels')
+plt.ylabel('True Labels')
+plt.title('Confusion Matrix')
+plt.show()
+
+param_grid = {'n_estimators': [10, 50, 100], 'max_depth': [None, 10, 20, 30], 'min_samples_split': [2, 5, 10]}
+
+# Create a GridSearchCV object:
+# The first argument is the model to be tuned (RandomForestClassifier() in this case).
+# The second argument is the hyperparameter grid (param_grid). cv=5 specifies 5-fold cross-validation,
+# meaning the dataset is split into 5 parts, and the model is trained and validated 5 times.
+grid_search = GridSearchCV(RandomForestClassifier(random_state=42), param_grid, cv=5)
+
+# Now fit the model (Random Forest) with different hyperparameter combinations to the training data.
+# It performs an exhaustive search over the specified hyperparameter grid and uses cross-validation to evaluate each combination.
+grid_search.fit(x_train, y_train)
+
+# Get the best parameters
+best_params = grid_search.best_params_
+print("Best Hyperparameters:", best_params)
+
+# Use the best model for prediction
+best_rf_model = grid_search.best_estimator_
+predict_rf_y_best = best_rf_model.predict(x_test)
+accuracy_rf_best = best_rf_model.score(x_test, y_test)
+print("Tuned Random Forest accuracy is:", accuracy_rf_best)
+
+quality_classification_df
+
+
+
+
 
